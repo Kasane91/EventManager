@@ -1,0 +1,5 @@
+{
+  "env": {
+    "MONGO_URI": "mongodb+srv://admin-sondre:Nyttliv2020@lyricalcluster.krdin.mongodb.net/eventCity?retryWrites=true&w=majority"
+  }
+}
