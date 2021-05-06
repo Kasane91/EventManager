@@ -6,8 +6,8 @@ const {
   GraphQLID,
   GraphQLNonNull,
 } = require("graphql");
-const EventType = require("./event");
-const UserType = require("./UserType");
+const { EventType, UserType } = require("./types");
+
 const { model } = require("mongoose");
 const User = model("User");
 const Event = model("Event");

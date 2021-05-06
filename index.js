@@ -3,8 +3,7 @@ const { graphqlHTTP } = require("express-graphql");
 const graphql = require("graphql");
 require("./models/events");
 require("./models/user");
-require("./schema/event");
-require("./schema/UserType");
+
 const mongoose = require("mongoose");
 const schema = require("./schema/schema");
 
