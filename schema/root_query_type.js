@@ -10,14 +10,14 @@ const Event = model("Event");
 const User = model("User");
 const Booking = model("Booking");
 const { EventType, UserType, BookingType } = require("./types");
-const { dateToString } = require("../utils/timestamp");
+
 const {
   user,
   findEvent,
+  transformBooking,
   transformEvent,
   events,
 } = require("../utils/recursionUtil");
-const { transformBooking } = require("../utils/transformBooking");
 
 const RootQuery = new GraphQLObjectType({
   name: "RootQueryType",
@@ -76,4 +76,4 @@ const RootQuery = new GraphQLObjectType({
   }),
 });
 
-module.exports = { RootQuery };
+module.exports = RootQuery;

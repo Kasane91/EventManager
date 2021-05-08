@@ -1,4 +1,8 @@
-const { transformEvent, findEvent } = require("../utils/recursionUtil");
+const {
+  transformEvent,
+  findEvent,
+  transformBooking,
+} = require("../utils/recursionUtil");
 const {
   GraphQLObjectType,
   GraphQLString,
@@ -8,7 +12,6 @@ const {
   GraphQLNonNull,
 } = require("graphql");
 const { EventType, UserType, BookingType } = require("./types");
-const { transformBooking } = require("../utils/transformBooking");
 
 const { model } = require("mongoose");
 const User = model("User");

@@ -2,7 +2,6 @@ const mongoose = require("mongoose");
 const { model } = mongoose;
 const Event = model("Event");
 const User = model("User");
-const Booking = model("Booking");
 const { dateToString } = require("../utils/timestamp");
 
 const transformEvent = (event) => {
@@ -10,6 +9,16 @@ const transformEvent = (event) => {
     ...event._doc,
     creator: user(event._doc.creator),
     date: dateToString(event._doc.date),
+  };
+};
+
+const transformBooking = (booking) => {
+  return {
+    ...booking._doc,
+    createdAt: dateToString(booking._doc.createdAt),
+    updatedAt: dateToString(booking._doc.updatedAt),
+    user: user(booking._doc.user),
+    event: findEvent(booking._doc.event),
   };
 };
 
@@ -47,4 +56,5 @@ module.exports = {
   user,
   findEvent,
   events,
+  transformBooking,
 };

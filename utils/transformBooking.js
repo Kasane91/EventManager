@@ -4,7 +4,6 @@ const { dateToString } = require("./timestamp");
 const transformBooking = (booking) => {
   return {
     ...booking._doc,
-
     createdAt: dateToString(booking._doc.createdAt),
     updatedAt: dateToString(booking._doc.updatedAt),
     user: user(booking._doc.user),
