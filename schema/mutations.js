@@ -1,3 +1,4 @@
+const RootQuery = require("./root_query_type");
 const {
   GraphQLObjectType,
   GraphQLString,
@@ -6,11 +7,13 @@ const {
   GraphQLID,
   GraphQLNonNull,
 } = require("graphql");
-const { EventType, UserType } = require("./types");
+const { EventType, UserType, BookingType } = require("./types");
+const { dateToString } = require("../utils/timestamp");
 
 const { model } = require("mongoose");
 const User = model("User");
 const Event = model("Event");
+const Booking = model("Booking");
 const argon2 = require("argon2");
 
 const mutation = new GraphQLObjectType({
@@ -38,12 +41,12 @@ const mutation = new GraphQLObjectType({
           if (!user) {
             throw new Error("User does not exist lol");
           }
+
           await user.createdEvents.push(event);
           await user.save();
-
-          const savedEvent = await event.save();
-
-          return savedEvent;
+          await event.save();
+          const transformEvent = RootQuery.transformEvent(event);
+          return transformEvent;
         } catch (error) {
           throw error;
         }
@@ -71,6 +74,48 @@ const mutation = new GraphQLObjectType({
           return { ...res._doc, password: null };
         } catch (error) {
           throw new error("User could not be created", error);
+        }
+      },
+    },
+    bookEvent: {
+      type: BookingType,
+      args: {
+        eventId: { type: new GraphQLNonNull(GraphQLID) },
+        userId: { type: GraphQLID },
+      },
+      async resolve(parentValue, { eventId, userId }) {
+        const fetchedEvent = await Event.findOne({ _id: eventId });
+
+        const booking = new Booking({
+          user: "6093aab3b766d122d47fa3ff",
+          event: fetchedEvent,
+        });
+
+        const result = await booking.save();
+
+        return {
+          ...result._doc,
+          createdAt: dateToString(result._doc.createdAt),
+          updatedAt: dateToString(result._doc.updatedAt),
+          event: RootQuery.findEvent(eventId),
+          user: RootQuery.user(result._doc.user),
+        };
+      },
+    },
+    cancelBooking: {
+      type: EventType,
+      args: {
+        bookingId: { type: new GraphQLNonNull(GraphQLID) },
+      },
+      async resolve(parentValue, { bookingId }) {
+        try {
+          const booking = await Booking.findById(bookingId).populate("event");
+          const event = await RootQuery.findEvent(booking._doc.event._id);
+
+          await Booking.deleteOne({ _id: bookingId });
+          return event;
+        } catch (err) {
+          throw new err();
         }
       },
     },

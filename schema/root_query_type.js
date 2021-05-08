@@ -8,30 +8,46 @@ const mongoose = require("mongoose");
 const { model } = mongoose;
 const Event = model("Event");
 const User = model("User");
-const { EventType, UserType } = require("./types");
+const Booking = model("Booking");
+const { EventType, UserType, BookingType } = require("./types");
+const { dateToString } = require("../utils/timestamp");
+
+const transformEvent = (event) => {
+  return {
+    ...event._doc,
+    creator: user(event._doc.creator),
+    date: dateToString(event._doc.date),
+  };
+};
 
 //fetches a user based on ID, and removes password
 const user = async (userId) => {
   try {
-    const foundUser = await User.findById(userId);
-    foundUser.password = null;
-    return foundUser;
+    const user = await User.findById(userId);
+    return { ...user._doc, createdEvents: events(user._doc.createdEvents) };
   } catch (err) {
     throw new err();
   }
 };
 
-//fetches events created by a singular user. Takes an array of eventId's as input
-const events = async (eventIds) => {
-  const foundEvents = await Event.find({ _id: { $in: eventIds } });
-  const processedEvents = await foundEvents.map((event) => {
-    return {
-      ...event._doc,
-      creator: user(event._doc.creator),
-    };
-  });
+const findEvent = async (eventId) => {
+  try {
+    const foundEvent = await Event.findOne({ _id: eventId });
 
-  return processedEvents;
+    return transformEvent(foundEvent);
+  } catch (err) {
+    throw new err();
+  }
+};
+
+const events = async (eventIds) => {
+  try {
+    const foundEvents = await Event.find({ _id: { $in: eventIds } });
+
+    return foundEvents;
+  } catch (err) {
+    throw new err();
+  }
 };
 
 const RootQuery = new GraphQLObjectType({
@@ -41,25 +57,19 @@ const RootQuery = new GraphQLObjectType({
       type: new GraphQLNonNull(GraphQLList(EventType)),
       async resolve() {
         try {
-          const foundEvents = await Event.find();
-          const eventsWithUserInfo = await foundEvents.map((event) => {
-            return {
-              ...event._doc,
-              creator: user(event._doc.creator),
-            };
-          });
+          const events = await Event.find();
 
-          return eventsWithUserInfo;
+          return events.map(transformEvent);
         } catch (err) {
           throw new err();
         }
       },
     },
+
     user: {
       type: GraphQLList(UserType),
       async resolve() {
         // Easy way
-
         // const foundUsers = await User.find().populate({
         //   path: "createdEvents",
         //   populate: { path: "creator" },
@@ -67,9 +77,9 @@ const RootQuery = new GraphQLObjectType({
 
         // return foundUsers;
         try {
-          foundUsers = await User.find();
+          const foundUsers = await User.find();
 
-          const foundUsersProcessed = foundUsers.map((user) => {
+          const foundUsersProcessed = await foundUsers.map((user) => {
             return {
               ...user._doc,
               password: null,
@@ -83,7 +93,29 @@ const RootQuery = new GraphQLObjectType({
         }
       },
     },
+    bookings: {
+      type: new GraphQLList(BookingType),
+      async resolve() {
+        try {
+          const foundBookings = await Booking.find();
+
+          return foundBookings.map((booking) => {
+            return {
+              ...booking._doc,
+
+              //helper method?
+              createdAt: dateToString(booking._doc.createdAt),
+              updatedAt: dateToString(booking._doc.updatedAt),
+              user: user(booking._doc.user),
+              event: findEvent(booking._doc.event),
+            };
+          });
+        } catch (err) {
+          throw new err();
+        }
+      },
+    },
   }),
 });
 
-module.exports = RootQuery;
+module.exports = { RootQuery, user, findEvent, transformEvent };

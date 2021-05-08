@@ -29,4 +29,15 @@ const UserType = new GraphQLObjectType({
   }),
 });
 
-module.exports = { UserType, EventType };
+const BookingType = new GraphQLObjectType({
+  name: "BookingType",
+  fields: () => ({
+    _id: { type: GraphQLID },
+    event: { type: EventType },
+    user: { type: UserType },
+    createdAt: { type: GraphQLString },
+    updatedAt: { type: GraphQLString },
+  }),
+});
+
+module.exports = { UserType, EventType, BookingType };
