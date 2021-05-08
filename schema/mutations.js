@@ -1,4 +1,4 @@
-const RootQuery = require("./root_query_type");
+const { transformEvent, findEvent } = require("../utils/recursionUtil");
 const {
   GraphQLObjectType,
   GraphQLString,
@@ -8,7 +8,7 @@ const {
   GraphQLNonNull,
 } = require("graphql");
 const { EventType, UserType, BookingType } = require("./types");
-const { dateToString } = require("../utils/timestamp");
+const { transformBooking } = require("../utils/transformBooking");
 
 const { model } = require("mongoose");
 const User = model("User");
@@ -45,8 +45,7 @@ const mutation = new GraphQLObjectType({
           await user.createdEvents.push(event);
           await user.save();
           await event.save();
-          const transformEvent = RootQuery.transformEvent(event);
-          return transformEvent;
+          return transformEvent(event);
         } catch (error) {
           throw error;
         }
@@ -93,13 +92,7 @@ const mutation = new GraphQLObjectType({
 
         const result = await booking.save();
 
-        return {
-          ...result._doc,
-          createdAt: dateToString(result._doc.createdAt),
-          updatedAt: dateToString(result._doc.updatedAt),
-          event: RootQuery.findEvent(eventId),
-          user: RootQuery.user(result._doc.user),
-        };
+        return transformBooking(result);
       },
     },
     cancelBooking: {
@@ -110,7 +103,7 @@ const mutation = new GraphQLObjectType({
       async resolve(parentValue, { bookingId }) {
         try {
           const booking = await Booking.findById(bookingId).populate("event");
-          const event = await RootQuery.findEvent(booking._doc.event._id);
+          const event = await findEvent(booking._doc.event._id);
 
           await Booking.deleteOne({ _id: bookingId });
           return event;

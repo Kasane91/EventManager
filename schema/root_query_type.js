@@ -11,44 +11,13 @@ const User = model("User");
 const Booking = model("Booking");
 const { EventType, UserType, BookingType } = require("./types");
 const { dateToString } = require("../utils/timestamp");
-
-const transformEvent = (event) => {
-  return {
-    ...event._doc,
-    creator: user(event._doc.creator),
-    date: dateToString(event._doc.date),
-  };
-};
-
-//fetches a user based on ID, and removes password
-const user = async (userId) => {
-  try {
-    const user = await User.findById(userId);
-    return { ...user._doc, createdEvents: events(user._doc.createdEvents) };
-  } catch (err) {
-    throw new err();
-  }
-};
-
-const findEvent = async (eventId) => {
-  try {
-    const foundEvent = await Event.findOne({ _id: eventId });
-
-    return transformEvent(foundEvent);
-  } catch (err) {
-    throw new err();
-  }
-};
-
-const events = async (eventIds) => {
-  try {
-    const foundEvents = await Event.find({ _id: { $in: eventIds } });
-
-    return foundEvents;
-  } catch (err) {
-    throw new err();
-  }
-};
+const {
+  user,
+  findEvent,
+  transformEvent,
+  events,
+} = require("../utils/recursionUtil");
+const { transformBooking } = require("../utils/transformBooking");
 
 const RootQuery = new GraphQLObjectType({
   name: "RootQueryType",
@@ -98,18 +67,7 @@ const RootQuery = new GraphQLObjectType({
       async resolve() {
         try {
           const foundBookings = await Booking.find();
-
-          return foundBookings.map((booking) => {
-            return {
-              ...booking._doc,
-
-              //helper method?
-              createdAt: dateToString(booking._doc.createdAt),
-              updatedAt: dateToString(booking._doc.updatedAt),
-              user: user(booking._doc.user),
-              event: findEvent(booking._doc.event),
-            };
-          });
+          return foundBookings.map(transformBooking);
         } catch (err) {
           throw new err();
         }
@@ -118,4 +76,4 @@ const RootQuery = new GraphQLObjectType({
   }),
 });
 
-module.exports = { RootQuery, user, findEvent, transformEvent };
+module.exports = { RootQuery };
