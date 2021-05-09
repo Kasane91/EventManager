@@ -7,6 +7,7 @@ require("./models/bookingModel");
 
 const mongoose = require("mongoose");
 const schema = require("./schema/schema");
+const isAuth = require("./middleware/is-auth");
 
 mongoose
   .connect(process.env.MONGO_URI, {
@@ -22,6 +23,7 @@ mongoose
 
 const app = express();
 app.use(express.json());
+app.use(isAuth);
 
 app.use(
   "/graphql",

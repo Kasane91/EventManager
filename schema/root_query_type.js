@@ -62,6 +62,7 @@ const RootQuery = new GraphQLObjectType({
         }
       },
     },
+
     bookings: {
       type: new GraphQLList(BookingType),
       async resolve() {

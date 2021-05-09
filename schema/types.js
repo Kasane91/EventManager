@@ -2,6 +2,7 @@ const {
   GraphQLObjectType,
   GraphQLString,
   GraphQLID,
+  GraphQLInt,
   GraphQLNonNull,
   GraphQLFloat,
   GraphQLList,
@@ -39,5 +40,13 @@ const BookingType = new GraphQLObjectType({
     updatedAt: { type: GraphQLString },
   }),
 });
+const AuthType = new GraphQLObjectType({
+  name: "AuthData",
+  fields: () => ({
+    userId: { type: new GraphQLNonNull(GraphQLID) },
+    token: { type: GraphQLString },
+    tokenExpiration: { type: GraphQLInt },
+  }),
+});
 
-module.exports = { UserType, EventType, BookingType };
+module.exports = { UserType, EventType, BookingType, AuthType };

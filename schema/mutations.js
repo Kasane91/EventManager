@@ -11,13 +11,16 @@ const {
   GraphQLID,
   GraphQLNonNull,
 } = require("graphql");
-const { EventType, UserType, BookingType } = require("./types");
+const { EventType, UserType, BookingType, AuthType } = require("./types");
 
-const { model } = require("mongoose");
+const { model, Error } = require("mongoose");
 const User = model("User");
 const Event = model("Event");
 const Booking = model("Booking");
 const argon2 = require("argon2");
+const jwt = require("jsonwebtoken");
+const { json } = require("express");
+const SECRET_KEY = process.env.SECRET_KEY;
 
 const mutation = new GraphQLObjectType({
   name: "Mutation",
@@ -76,6 +79,43 @@ const mutation = new GraphQLObjectType({
           return { ...res._doc, password: null };
         } catch (error) {
           throw new error("User could not be created", error);
+        }
+      },
+    },
+    loginUser: {
+      type: AuthType,
+      args: {
+        email: { type: new GraphQLNonNull(GraphQLString) },
+        password: { type: new GraphQLNonNull(GraphQLString) },
+      },
+      async resolve(parentValue, { email, password }, context) {
+        const exisitingUser = await User.findOne({ email });
+        if (!exisitingUser) {
+          throw new Error("User not found");
+        }
+        try {
+          if (await argon2.verify(exisitingUser.password, password)) {
+            const jwtToken = await jwt.sign(
+              {
+                userId: exisitingUser._id,
+                email,
+              },
+              SECRET_KEY,
+              {
+                expiresIn: "1h",
+              }
+            );
+
+            return {
+              userId: exisitingUser._id,
+              token: jwtToken,
+              tokenExpiration: 1,
+            };
+          } else {
+            throw new Error("Incorrect password");
+          }
+        } catch (err) {
+          throw new Error(err);
         }
       },
     },
