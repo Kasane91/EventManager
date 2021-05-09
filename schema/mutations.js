@@ -34,15 +34,22 @@ const mutation = new GraphQLObjectType({
         price: { type: new GraphQLNonNull(GraphQLFloat) },
         date: { type: GraphQLString },
       },
-      async resolve(parentValue, { title, description, price }) {
+      async resolve(
+        parentValue,
+        { title, description, price },
+        { isAuth, userId }
+      ) {
+        if (!isAuth) {
+          throw new Error("User not authenticated");
+        }
         try {
           const event = await new Event({
             title,
             description,
             price,
-            creator: "6093aab3b766d122d47fa3ff",
+            creator: userId,
           });
-          const user = await User.findById("6093aab3b766d122d47fa3ff");
+          const user = await User.findById(userId);
 
           if (!user) {
             throw new Error("User does not exist lol");
@@ -88,7 +95,8 @@ const mutation = new GraphQLObjectType({
         email: { type: new GraphQLNonNull(GraphQLString) },
         password: { type: new GraphQLNonNull(GraphQLString) },
       },
-      async resolve(parentValue, { email, password }, context) {
+      async resolve(parentValue, { email, password }, req) {
+        console.log(SECRET_KEY);
         const exisitingUser = await User.findOne({ email });
         if (!exisitingUser) {
           throw new Error("User not found");
@@ -125,7 +133,10 @@ const mutation = new GraphQLObjectType({
         eventId: { type: new GraphQLNonNull(GraphQLID) },
         userId: { type: GraphQLID },
       },
-      async resolve(parentValue, { eventId, userId }) {
+      async resolve(parentValue, { eventId, userId }, req) {
+        if (!req.isAuth) {
+          throw new Error("Unauthorized");
+        }
         const fetchedEvent = await Event.findOne({ _id: eventId });
 
         const booking = new Booking({
@@ -143,7 +154,10 @@ const mutation = new GraphQLObjectType({
       args: {
         bookingId: { type: new GraphQLNonNull(GraphQLID) },
       },
-      async resolve(parentValue, { bookingId }) {
+      async resolve(parentValue, { bookingId }, req) {
+        if (!req.isAuth) {
+          throw new Error("Unauthorized");
+        }
         try {
           const booking = await Booking.findById(bookingId).populate("event");
           const event = await findEvent(booking._doc.event._id);
