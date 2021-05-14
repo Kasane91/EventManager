@@ -70,7 +70,7 @@ const RootQuery = new GraphQLObjectType({
           throw new Error(401, "Unauthorized");
         }
         try {
-          const foundBookings = await Booking.find();
+          const foundBookings = await Booking.find({ user: req.userId });
           return foundBookings.map(transformBooking);
         } catch (err) {
           throw new err();

@@ -36,9 +36,11 @@ const mutation = new GraphQLObjectType({
       },
       async resolve(
         parentValue,
-        { title, description, price },
+        { title, description, price, date },
         { isAuth, userId }
       ) {
+        console.log(isAuth);
+        console.log(date);
         if (!isAuth) {
           throw new Error("User not authenticated");
         }
@@ -140,7 +142,7 @@ const mutation = new GraphQLObjectType({
         const fetchedEvent = await Event.findOne({ _id: eventId });
 
         const booking = new Booking({
-          user: "6093aab3b766d122d47fa3ff",
+          user: req.userId,
           event: fetchedEvent,
         });
 
@@ -154,8 +156,8 @@ const mutation = new GraphQLObjectType({
       args: {
         bookingId: { type: new GraphQLNonNull(GraphQLID) },
       },
-      async resolve(parentValue, { bookingId }, req) {
-        if (!req.isAuth) {
+      async resolve(parentValue, { bookingId }, { isAuth, userId }) {
+        if (!isAuth) {
           throw new Error("Unauthorized");
         }
         try {
